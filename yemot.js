@@ -20,7 +20,6 @@ export default async function yemotHandler(request, env) {
 
     const getDevices = async () => {
         try {
-            // הוספת measurements כדי לקבל את הטמפרטורה והלחות בחדר
             const res = await fetch(`https://home.sensibo.com/api/v2/users/me/pods?fields=id,room,acState,connectionStatus,measurements&apiKey=${apiKey}`);
             const data = await res.json();
             return data.result || [];
@@ -94,10 +93,14 @@ export default async function yemotHandler(request, env) {
         });
     }
 
-    // שמיעת טמפרטורה ולחות - מקש 8
     if (acAction === '8') {
-        const temp = selectedDevice.measurements?.temperature || 'לא ידוע';
-        const hum = selectedDevice.measurements?.humidity || 'לא ידוע';
+        let temp = selectedDevice.measurements?.temperature;
+        let hum = selectedDevice.measurements?.humidity;
+        
+        // עיגול המספרים כדי למנוע נקודה עשרונית בטקסט שמוקרא בימות המשיח
+        temp = temp !== undefined ? Math.round(temp) : 'לא ידוע';
+        hum = hum !== undefined ? Math.round(hum) : 'לא ידוע';
+        
         return new Response(`id_list_message=t-הטמפרטורה בחדר היא ${temp} מעלות והלחות היא ${hum} אחוז&`, {
             headers: { 'Content-Type': 'text/plain; charset=utf-8' }
         });
