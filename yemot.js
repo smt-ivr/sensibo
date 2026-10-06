@@ -4,7 +4,6 @@ export default async function yemotHandler(request, env) {
     const acAction = url.searchParams.get('ac_action');
     const acVal = url.searchParams.get('ac_val');
     
-    // זיהוי יציאה בכל שלב
     if (deviceIndex === '*' || acAction === '*' || acVal === '*') {
         return new Response("go_to_folder=/", {
             headers: { 'Content-Type': 'text/plain; charset=utf-8' }
@@ -21,7 +20,8 @@ export default async function yemotHandler(request, env) {
 
     const getDevices = async () => {
         try {
-            const res = await fetch(`https://home.sensibo.com/api/v2/users/me/pods?fields=id,room,acState,connectionStatus&apiKey=${apiKey}`);
+            // הוספת measurements כדי לקבל את הטמפרטורה והלחות בחדר
+            const res = await fetch(`https://home.sensibo.com/api/v2/users/me/pods?fields=id,room,acState,connectionStatus,measurements&apiKey=${apiKey}`);
             const data = await res.json();
             return data.result || [];
         } catch (e) {
@@ -39,7 +39,7 @@ export default async function yemotHandler(request, env) {
 
     if (!deviceIndex) {
         let menuText = "t-לבחירת מזגן";
-        let allowedKeys = "*"; // מאפשר כוכבית
+        let allowedKeys = "*";
         for (let i = 0; i < devices.length; i++) {
             let roomName = devices[i].room.name.replace(/\./g, '');
             menuText += ` ל${roomName} הקש ${i + 1}`;
@@ -88,8 +88,17 @@ export default async function yemotHandler(request, env) {
             ? `${connectionText} והמזגן פועל על ${translateMode(state.mode)} ב ${state.targetTemperature} מעלות אוורור ${translateFan(state.fanLevel)} תריסים ${translateSwing(state.swing)} ותאורה ${translateLight(state.light)}`
             : `${connectionText} והמזגן כעת כבוי`;
         
-        const prompt = `t-${statusText} להדלקה הקש 1 לכיבוי הקש 2 לשינוי מעלות הקש 3 לשינוי מצב הקש 4 לשינוי אוורור הקש 5 לשליטה על התריסים הקש 6 לנורית המזגן הקש 7 ליציאה הקש כוכבית`;
-        return new Response(`read=${prompt}=ac_action,,1,,,NO,,,,1234567*,,,,,no`, {
+        const prompt = `t-${statusText} להדלקה הקש 1 לכיבוי הקש 2 לשינוי מעלות הקש 3 לשינוי מצב הקש 4 לשינוי אוורור הקש 5 לשליטה על התריסים הקש 6 לנורית המזגן הקש 7 לשמיעת נתוני טמפרטורה ולחות הקש 8 ליציאה הקש כוכבית`;
+        return new Response(`read=${prompt}=ac_action,,1,,,NO,,,,12345678*,,,,,no`, {
+            headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+        });
+    }
+
+    // שמיעת טמפרטורה ולחות - מקש 8
+    if (acAction === '8') {
+        const temp = selectedDevice.measurements?.temperature || 'לא ידוע';
+        const hum = selectedDevice.measurements?.humidity || 'לא ידוע';
+        return new Response(`id_list_message=t-הטמפרטורה בחדר היא ${temp} מעלות והלחות היא ${hum} אחוז&`, {
             headers: { 'Content-Type': 'text/plain; charset=utf-8' }
         });
     }
