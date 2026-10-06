@@ -5,13 +5,13 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
-    // ניתוב לשלוחת ימות המשיח
-    if (url.pathname.startsWith('/yemot')) {
+    // ניתוב לשלוחת ימות המשיח תחת /sensibo/yemot
+    if (url.pathname.startsWith('/sensibo/yemot')) {
       return await yemotHandler(request, env);
     }
 
-    // ניתוב ל-API הכללי (עבור האתר)
-    if (url.pathname.startsWith('/api')) {
+    // ניתוב ל-API הכללי תחת /sensibo/api
+    if (url.pathname.startsWith('/sensibo/api')) {
       return await apiHandler(request, env);
     }
 
