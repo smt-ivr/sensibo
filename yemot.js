@@ -62,7 +62,7 @@ export default async function yemotHandler(request, env) {
     };
 
     const translateSwing = (swing) => {
-        const swings = { 'stopped': 'עצורים', 'rangeFull': 'זזים', 'fixedTop': 'למעלה', 'fixedMiddle': 'באמצע', 'fixedBottom': 'למטה' };
+        const swings = { 'stopped': 'עצורים', 'rangeFull': 'זזים', 'fixedTop': 'למעלה', 'fixedMiddleTop': 'אמצע למעלה', 'fixedMiddle': 'באמצע', 'fixedMiddleBottom': 'אמצע למטה', 'fixedBottom': 'למטה' };
         return swings[swing] || swing || 'ללא נתון';
     };
 
@@ -105,7 +105,7 @@ export default async function yemotHandler(request, env) {
     }
 
     if (acAction === '6' && !acVal) {
-        return new Response(`read=t-לעצירת התריסים הקש 1 לתנועה אוטומטית הקש 2=ac_val,,1,,,NO,,,,12,,,,,no`, {
+        return new Response(`read=t-לעצירת התריסים הקש 1 לתנועה רציפה הקש 2 לקיבוע למעלה הקש 3 לקיבוע באמצע הקש 4 לקיבוע למטה הקש 5=ac_val,,1,,,NO,,,,12345,,,,,no`, {
             headers: { 'Content-Type': 'text/plain; charset=utf-8' }
         });
     }
@@ -132,7 +132,7 @@ export default async function yemotHandler(request, env) {
             const fansMap = { '1': 'low', '2': 'medium', '3': 'high', '4': 'auto' };
             stateUpdates.fanLevel = fansMap[acVal];
         } else if (acAction === '6') {
-            const swingsMap = { '1': 'stopped', '2': 'rangeFull' };
+            const swingsMap = { '1': 'stopped', '2': 'rangeFull', '3': 'fixedTop', '4': 'fixedMiddle', '5': 'fixedBottom' };
             stateUpdates.swing = swingsMap[acVal];
         } else if (acAction === '7') {
             const lightMap = { '1': 'on', '2': 'off' };
