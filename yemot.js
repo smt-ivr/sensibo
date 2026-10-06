@@ -61,20 +61,27 @@ export default async function yemotHandler(request, env) {
         return fans[fan] || fan;
     };
 
+    const translateSwing = (swing) => {
+        const swings = { 'stopped': 'עצורים', 'rangeFull': 'זזים', 'fixedTop': 'למעלה', 'fixedMiddle': 'באמצע', 'fixedBottom': 'למטה' };
+        return swings[swing] || swing || 'ללא נתון';
+    };
+
+    const translateLight = (light) => {
+        return light === 'on' ? 'דולקת' : 'כבויה';
+    };
+
     if (!acAction) {
         const state = selectedDevice.acState;
         
-        // בדיקת מצב חיבור לרשת - קודם כל
         const isConnected = selectedDevice.connectionStatus && selectedDevice.connectionStatus.isAlive;
         const connectionText = isConnected ? "המכשיר מחובר לרשת" : "שים לב המכשיר כעת מנותק מהרשת";
 
-        // לאחר מכן מצב המזגן
         let statusText = state.on 
-            ? `${connectionText} והמזגן פועל על ${translateMode(state.mode)} ב ${state.targetTemperature} מעלות ועוצמת מאוורר ${translateFan(state.fanLevel)}`
+            ? `${connectionText} והמזגן פועל על ${translateMode(state.mode)} ב ${state.targetTemperature} מעלות אוורור ${translateFan(state.fanLevel)} תריסים ${translateSwing(state.swing)} ותאורה ${translateLight(state.light)}`
             : `${connectionText} והמזגן כעת כבוי`;
         
-        const prompt = `t-${statusText} להדלקה הקש 1 לכיבוי הקש 2 לשינוי מעלות הקש 3 לשינוי מצב הקש 4 לשינוי עוצמת אוורור הקש 5`;
-        return new Response(`read=${prompt}=ac_action,,1,,,NO,,,,12345,,,,,no`, {
+        const prompt = `t-${statusText} להדלקה הקש 1 לכיבוי הקש 2 לשינוי מעלות הקש 3 לשינוי מצב הקש 4 לשינוי אוורור הקש 5 לשליטה על התריסים הקש 6 לנורית המזגן הקש 7`;
+        return new Response(`read=${prompt}=ac_action,,1,,,NO,,,,1234567,,,,,no`, {
             headers: { 'Content-Type': 'text/plain; charset=utf-8' }
         });
     }
@@ -97,6 +104,18 @@ export default async function yemotHandler(request, env) {
         });
     }
 
+    if (acAction === '6' && !acVal) {
+        return new Response(`read=t-לעצירת התריסים הקש 1 לתנועה אוטומטית הקש 2=ac_val,,1,,,NO,,,,12,,,,,no`, {
+            headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+        });
+    }
+
+    if (acAction === '7' && !acVal) {
+        return new Response(`read=t-להדלקת הנורית במזגן הקש 1 לכיבוי הנורית הקש 2=ac_val,,1,,,NO,,,,12,,,,,no`, {
+            headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+        });
+    }
+
     try {
         const stateUpdates = {};
         
@@ -112,6 +131,12 @@ export default async function yemotHandler(request, env) {
         } else if (acAction === '5') {
             const fansMap = { '1': 'low', '2': 'medium', '3': 'high', '4': 'auto' };
             stateUpdates.fanLevel = fansMap[acVal];
+        } else if (acAction === '6') {
+            const swingsMap = { '1': 'stopped', '2': 'rangeFull' };
+            stateUpdates.swing = swingsMap[acVal];
+        } else if (acAction === '7') {
+            const lightMap = { '1': 'on', '2': 'off' };
+            stateUpdates.light = lightMap[acVal];
         }
 
         await fetch(`https://home.sensibo.com/api/v2/pods/${selectedDevice.id}/acStates?apiKey=${apiKey}`, {
