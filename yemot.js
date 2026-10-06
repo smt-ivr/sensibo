@@ -77,6 +77,12 @@ export default async function yemotHandler(request, env) {
         return light === 'on' ? 'דולקת' : 'כבויה';
     };
 
+    // פונקציה שממירה מספרים עם עשרוני למילה "נקודה" כדי לא להפיל את ימות המשיח
+    const formatSpeakableNumber = (num) => {
+        if (num === undefined || num === null) return 'לא ידוע';
+        return num.toString().replace(/\./g, ' נקודה ');
+    };
+
     if (!acAction) {
         const state = selectedDevice.acState;
         
@@ -84,7 +90,7 @@ export default async function yemotHandler(request, env) {
         const connectionText = isConnected ? "המכשיר מחובר לרשת" : "שים לב המכשיר כעת מנותק מהרשת";
 
         let statusText = state.on 
-            ? `${connectionText} והמזגן פועל על ${translateMode(state.mode)} ב ${state.targetTemperature} מעלות אוורור ${translateFan(state.fanLevel)} תריסים ${translateSwing(state.swing)} ותאורה ${translateLight(state.light)}`
+            ? `${connectionText} והמזגן פועל על ${translateMode(state.mode)} ב ${formatSpeakableNumber(state.targetTemperature)} מעלות אוורור ${translateFan(state.fanLevel)} תריסים ${translateSwing(state.swing)} ותאורה ${translateLight(state.light)}`
             : `${connectionText} והמזגן כעת כבוי`;
         
         const prompt = `t-${statusText} להדלקה הקש 1 לכיבוי הקש 2 לשינוי מעלות הקש 3 לשינוי מצב הקש 4 לשינוי אוורור הקש 5 לשליטה על התריסים הקש 6 לנורית המזגן הקש 7 לשמיעת נתוני טמפרטורה ולחות הקש 8 ליציאה הקש כוכבית`;
@@ -94,13 +100,8 @@ export default async function yemotHandler(request, env) {
     }
 
     if (acAction === '8') {
-        let temp = selectedDevice.measurements?.temperature;
-        let hum = selectedDevice.measurements?.humidity;
-        
-        // עיגול המספרים כדי למנוע נקודה עשרונית בטקסט שמוקרא בימות המשיח
-        temp = temp !== undefined ? Math.round(temp) : 'לא ידוע';
-        hum = hum !== undefined ? Math.round(hum) : 'לא ידוע';
-        
+        const temp = formatSpeakableNumber(selectedDevice.measurements?.temperature);
+        const hum = formatSpeakableNumber(selectedDevice.measurements?.humidity);
         return new Response(`id_list_message=t-הטמפרטורה בחדר היא ${temp} מעלות והלחות היא ${hum} אחוז&`, {
             headers: { 'Content-Type': 'text/plain; charset=utf-8' }
         });
