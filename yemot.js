@@ -4,6 +4,13 @@ export default async function yemotHandler(request, env) {
     const acAction = url.searchParams.get('ac_action');
     const acVal = url.searchParams.get('ac_val');
     
+    // זיהוי יציאה בכל שלב
+    if (deviceIndex === '*' || acAction === '*' || acVal === '*') {
+        return new Response("go_to_folder=/", {
+            headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+        });
+    }
+    
     const apiKey = env.SENSIBO_API_KEY || url.searchParams.get('apiKey');
 
     if (!apiKey) {
@@ -32,12 +39,13 @@ export default async function yemotHandler(request, env) {
 
     if (!deviceIndex) {
         let menuText = "t-לבחירת מזגן";
-        let allowedKeys = "";
+        let allowedKeys = "*"; // מאפשר כוכבית
         for (let i = 0; i < devices.length; i++) {
             let roomName = devices[i].room.name.replace(/\./g, '');
             menuText += ` ל${roomName} הקש ${i + 1}`;
             allowedKeys += (i + 1).toString();
         }
+        menuText += " ליציאה הקש כוכבית";
         return new Response(`read=${menuText}=device_index,,1,,,NO,,,,${allowedKeys},,,,,no`, {
             headers: { 'Content-Type': 'text/plain; charset=utf-8' }
         });
@@ -80,38 +88,38 @@ export default async function yemotHandler(request, env) {
             ? `${connectionText} והמזגן פועל על ${translateMode(state.mode)} ב ${state.targetTemperature} מעלות אוורור ${translateFan(state.fanLevel)} תריסים ${translateSwing(state.swing)} ותאורה ${translateLight(state.light)}`
             : `${connectionText} והמזגן כעת כבוי`;
         
-        const prompt = `t-${statusText} להדלקה הקש 1 לכיבוי הקש 2 לשינוי מעלות הקש 3 לשינוי מצב הקש 4 לשינוי אוורור הקש 5 לשליטה על התריסים הקש 6 לנורית המזגן הקש 7`;
-        return new Response(`read=${prompt}=ac_action,,1,,,NO,,,,1234567,,,,,no`, {
+        const prompt = `t-${statusText} להדלקה הקש 1 לכיבוי הקש 2 לשינוי מעלות הקש 3 לשינוי מצב הקש 4 לשינוי אוורור הקש 5 לשליטה על התריסים הקש 6 לנורית המזגן הקש 7 ליציאה הקש כוכבית`;
+        return new Response(`read=${prompt}=ac_action,,1,,,NO,,,,1234567*,,,,,no`, {
             headers: { 'Content-Type': 'text/plain; charset=utf-8' }
         });
     }
 
     if (acAction === '3' && !acVal) {
-        return new Response(`read=t-הקש את המעלות הרצויות=ac_val,,,,,NO,,,,,,,,,no`, {
+        return new Response(`read=t-הקש את המעלות הרצויות או כוכבית ליציאה=ac_val,,,,,NO,,,,,,,,,no`, {
             headers: { 'Content-Type': 'text/plain; charset=utf-8' }
         });
     }
 
     if (acAction === '4' && !acVal) {
-        return new Response(`read=t-לקירור הקש 1 לחימום הקש 2 לאוורור הקש 3 לייבוש הקש 4 לאוטומט הקש 5=ac_val,,1,,,NO,,,,12345,,,,,no`, {
+        return new Response(`read=t-לקירור הקש 1 לחימום הקש 2 לאוורור הקש 3 לייבוש הקש 4 לאוטומט הקש 5 ליציאה הקש כוכבית=ac_val,,1,,,NO,,,,12345*,,,,,no`, {
             headers: { 'Content-Type': 'text/plain; charset=utf-8' }
         });
     }
 
     if (acAction === '5' && !acVal) {
-        return new Response(`read=t-לנמוך הקש 1 לבינוני הקש 2 לגבוה הקש 3 לאוטומט הקש 4=ac_val,,1,,,NO,,,,1234,,,,,no`, {
+        return new Response(`read=t-לנמוך הקש 1 לבינוני הקש 2 לגבוה הקש 3 לאוטומט הקש 4 ליציאה הקש כוכבית=ac_val,,1,,,NO,,,,1234*,,,,,no`, {
             headers: { 'Content-Type': 'text/plain; charset=utf-8' }
         });
     }
 
     if (acAction === '6' && !acVal) {
-        return new Response(`read=t-לעצירת התריסים הקש 1 לתנועה רציפה הקש 2 לקיבוע למעלה הקש 3 לקיבוע באמצע הקש 4 לקיבוע למטה הקש 5=ac_val,,1,,,NO,,,,12345,,,,,no`, {
+        return new Response(`read=t-לעצירת התריסים הקש 1 לתנועה רציפה הקש 2 לקיבוע למעלה הקש 3 לקיבוע באמצע הקש 4 לקיבוע למטה הקש 5 ליציאה הקש כוכבית=ac_val,,1,,,NO,,,,12345*,,,,,no`, {
             headers: { 'Content-Type': 'text/plain; charset=utf-8' }
         });
     }
 
     if (acAction === '7' && !acVal) {
-        return new Response(`read=t-להדלקת הנורית במזגן הקש 1 לכיבוי הנורית הקש 2=ac_val,,1,,,NO,,,,12,,,,,no`, {
+        return new Response(`read=t-להדלקת הנורית במזגן הקש 1 לכיבוי הנורית הקש 2 ליציאה הקש כוכבית=ac_val,,1,,,NO,,,,12*,,,,,no`, {
             headers: { 'Content-Type': 'text/plain; charset=utf-8' }
         });
     }
