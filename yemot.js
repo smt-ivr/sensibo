@@ -14,7 +14,8 @@ export default async function yemotHandler(request, env) {
 
     const getDevices = async () => {
         try {
-            const res = await fetch(`https://home.sensibo.com/api/v2/users/me/pods?fields=id,room,acState&apiKey=${apiKey}`);
+            // הוספת connectionStatus לשליפת הנתונים
+            const res = await fetch(`https://home.sensibo.com/api/v2/users/me/pods?fields=id,room,acState,connectionStatus&apiKey=${apiKey}`);
             const data = await res.json();
             return data.result || [];
         } catch (e) {
@@ -63,9 +64,14 @@ export default async function yemotHandler(request, env) {
 
     if (!acAction) {
         const state = selectedDevice.acState;
+        
+        // בדיקת מצב חיבור לרשת
+        const isConnected = selectedDevice.connectionStatus && selectedDevice.connectionStatus.isAlive;
+        const connectionText = isConnected ? "והמכשיר מחובר לרשת" : "שים לב המכשיר כעת מנותק מהרשת";
+
         let statusText = state.on 
-            ? `המזגן כעת פועל על ${translateMode(state.mode)} ב ${state.targetTemperature} מעלות ועוצמת מאוורר ${translateFan(state.fanLevel)}`
-            : "המזגן כעת כבוי";
+            ? `המזגן כעת פועל על ${translateMode(state.mode)} ב ${state.targetTemperature} מעלות ועוצמת מאוורר ${translateFan(state.fanLevel)} ${connectionText}`
+            : `המזגן כעת כבוי ${connectionText}`;
         
         const prompt = `t-${statusText} להדלקה הקש 1 לכיבוי הקש 2 לשינוי מעלות הקש 3 לשינוי מצב הקש 4 לשינוי עוצמת אוורור הקש 5`;
         return new Response(`read=${prompt}=ac_action,,1,,,NO,,,,12345,,,,,no`, {
